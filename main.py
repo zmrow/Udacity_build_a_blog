@@ -51,7 +51,7 @@ class NewPost(Handler):
         content = self.request.get('content')
 
         if subject and content:
-            post = NewPost(subject=subject, content=content)
+            post = BlogPost(subject=subject, content=content)
             post.put()
             post_id = post.key().id()
 
