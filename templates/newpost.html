@@ -2,12 +2,14 @@
 
 {% block content %}
 
-<h3>New Post</h3>
+<h2>New Post</h2>
 <form id="new-post" method="post">
     <div class="subject">Subject</div>
     <input type="text" name="subject" value="{{ subject }}">
     <div class="content">Post Content</div>
     <textarea id="new-post" name="content" cols="30" rows="10">{{ text }}</textarea>
+    <div class="error">{{ error }}</div>
+    <input type="submit">
 </form>
 
 {% endblock %}

@@ -1,8 +1,8 @@
 import os
-import re
 import jinja2
 import webapp2
-import codecs
+
+from google.appengine.ext import db
 
 # Jinja env setup taken from Googles sample app here:
 # https://github.com/GoogleCloudPlatform/appengine-guestbook-python/blob/master/guestbook.py
@@ -11,6 +11,12 @@ JINJA_ENV = jinja2.Environment(
     loader=jinja2.FileSystemLoader(TEMPLATE_DIR),
     extensions=['jinja2.ext.autoescape'],
     autoescape=True)
+
+
+class BlogPost(db.Model):
+    subject = db.StringProperty(required=True)
+    content = db.TextProperty(required=True)
+    created = db.DateTimeProperty(auto_now_add=True)
 
 
 class Handler(webapp2.RequestHandler):
@@ -26,39 +32,33 @@ class Handler(webapp2.RequestHandler):
 
 
 class Blog(Handler):
-    def get(self, text=''):
-        self.render("index.html", posts=posts)
-
-    def post(self):
-        text = self.request.get('text')
-        rot13_text = codecs.encode(text, 'rot_13')
-        self.render("rot13.html", text = rot13_text)
+    def get(self):
+        posts = db.GqlQuery('select * from BlogPost order by created DESC')
+        self.render('index.html', posts=posts)
 
 
 class Entry(Handler):
-    def get(self, username='',
-            email='',
-            user_error='',
-            password_error='',
-            verify_error='',
-            email_error=''):
-        self.render("user_signup.html", username=username, email=email)
-
-    def post(self):
-        username = self.request.get('username')
-        password = self.request.get('password')
-        verify = self.request.get('verify')
-        email = self.request.get('email')
+    def get(self,post_id):
+        self.render('blog/%s' % post_id)
 
 
 class NewPost(Handler):
-    def get(self):
-        username = self.request.get('username')
-        self.render("welcome.html", username=username)
+    def get(self, subject='', content='', error=''):
+        self.render("newpost.html")
 
     def post(self):
         subject = self.request.get('subject')
         content = self.request.get('content')
+
+        if subject and content:
+            post = NewPost(subject=subject, content=content)
+            post.put()
+            post_id = post.key().id()
+
+            self.redirect('blog/%s' % post_id)
+        else:
+            error = "Please enter both a subject and blog post"
+            self.render("newpost.html", error=error)
 
 app = webapp2.WSGIApplication([('/blog', Blog),
                                (r'/blog/(\d+)', Entry),
