@@ -38,8 +38,9 @@ class Blog(Handler):
 
 
 class Entry(Handler):
-    def get(self,post_id):
-        self.render('blog/%s' % post_id)
+    def get(self, post_id):
+        post = BlogPost.get_by_id(int(post_id))
+        self.render('permalink.html', post=post)
 
 
 class NewPost(Handler):
@@ -55,10 +56,10 @@ class NewPost(Handler):
             post.put()
             post_id = post.key().id()
 
-            self.redirect('blog/%s' % post_id)
+            self.redirect('%s' % post_id)
         else:
             error = "Please enter both a subject and blog post"
-            self.render("newpost.html", error=error)
+            self.render("newpost.html", subject=subject, content=content, error=error)
 
 app = webapp2.WSGIApplication([('/blog', Blog),
                                (r'/blog/(\d+)', Entry),
