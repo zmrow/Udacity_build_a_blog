@@ -1,4 +1,5 @@
 import os
+import re
 import jinja2
 import webapp2
 
@@ -26,9 +27,9 @@ def valid_email(email):
 
 
 class BlogPost(db.Model):
-subject = db.StringProperty(required=True)
-content = db.TextProperty(required=True)
-created = db.DateTimeProperty(auto_now_add=True)
+    subject = db.StringProperty(required=True)
+    content = db.TextProperty(required=True)
+    created = db.DateTimeProperty(auto_now_add=True)
 
 
 class Handler(webapp2.RequestHandler):
@@ -104,16 +105,16 @@ class Signup(Handler):
             has_error = True
 
         if has_error:
-            self.render('signup.html')
+            self.render('signup.html', **params)
         else:
-            self.response.headers.add_header('Set-Cookie', 'name=%s; Path=/' % username)
-            pass
+            self.response.headers.add_header('Set-Cookie', 'name=%s; Path=/' % str(username))
+            self.redirect('welcome')
 
 
 class Welcome(Handler):
     def get(self):
-        name = self.request.cookies.get(name)
-        self.render('welcome.html', name=name)
+        username = self.request.cookies.get('name')
+        self.render('welcome.html', username=username)
 
 app = webapp2.WSGIApplication([('/blog', Blog),
                                (r'/blog/(\d+)', Entry),
