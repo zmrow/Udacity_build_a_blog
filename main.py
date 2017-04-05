@@ -56,6 +56,25 @@ class Entry(Handler):
         self.render('permalink.html', post=post)
 
 
+class NewPost(Handler):
+    def get(self, subject='', content='', error=''):
+        self.render("newpost.html")
+
+    def post(self):
+        subject = self.request.get('subject')
+        content = self.request.get('content')
+
+        if subject and content:
+            post = BlogPost(subject=subject, content=content)
+            post.put()
+            post_id = post.key().id()
+
+            self.redirect('%s' % post_id)
+        else:
+            error = "Please enter both a subject and blog post"
+            self.render("newpost.html", subject=subject, content=content, error=error)
+
+
 class Signup(Handler):
     def get(self):
         self.render('signup.html')
@@ -87,29 +106,18 @@ class Signup(Handler):
         if has_error:
             self.render('signup.html')
         else:
+            self.response.headers.add_header('Set-Cookie', 'name=%s; Path=/' % username)
             pass
 
 
-class NewPost(Handler):
-    def get(self, subject='', content='', error=''):
-        self.render("newpost.html")
-
-    def post(self):
-        subject = self.request.get('subject')
-        content = self.request.get('content')
-
-        if subject and content:
-            post = BlogPost(subject=subject, content=content)
-            post.put()
-            post_id = post.key().id()
-
-            self.redirect('%s' % post_id)
-        else:
-            error = "Please enter both a subject and blog post"
-            self.render("newpost.html", subject=subject, content=content, error=error)
+class Welcome(Handler):
+    def get(self):
+        name = self.request.cookies.get(name)
+        self.render('welcome.html', name=name)
 
 app = webapp2.WSGIApplication([('/blog', Blog),
                                (r'/blog/(\d+)', Entry),
                                ('/blog/newpost', NewPost),
-                               ('/blog/signup', Signup)],
+                               ('/blog/signup', Signup),
+                               ('/blog/welcome', Welcome)],
                                debug=True)
