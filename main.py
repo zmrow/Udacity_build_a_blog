@@ -12,11 +12,23 @@ JINJA_ENV = jinja2.Environment(
     extensions=['jinja2.ext.autoescape'],
     autoescape=True)
 
+USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
+def valid_username(username):
+    return username and USER_RE.match(username)
+
+PASS_RE = re.compile(r"^.{3,20}$")
+def valid_password(password):
+    return password and PASS_RE.match(password)
+
+EMAIL_RE  = re.compile(r'^[\S]+@[\S]+\.[\S]+$')
+def valid_email(email):
+    return not email or EMAIL_RE.match(email)
+
 
 class BlogPost(db.Model):
-    subject = db.StringProperty(required=True)
-    content = db.TextProperty(required=True)
-    created = db.DateTimeProperty(auto_now_add=True)
+subject = db.StringProperty(required=True)
+content = db.TextProperty(required=True)
+created = db.DateTimeProperty(auto_now_add=True)
 
 
 class Handler(webapp2.RequestHandler):
@@ -39,8 +51,43 @@ class Blog(Handler):
 
 class Entry(Handler):
     def get(self, post_id):
+        # self.content.replace('\n', '<br>')
         post = BlogPost.get_by_id(int(post_id))
         self.render('permalink.html', post=post)
+
+
+class Signup(Handler):
+    def get(self):
+        self.render('signup.html')
+
+    def post(self):
+        has_error = False
+        username = self.request.get('username')
+        password = self.request.get('password')
+        verify = self.request.get('verify')
+        email = self.request.get('email')
+
+        params = dict(username = username, email = email)
+
+        if not valid_username(username):
+            params['user_error'] = 'That\'s not a valid username'
+            has_error = True
+
+        if not valid_password(password):
+            params['password_error'] = 'That\'s not a valid password'
+            has_error = True
+        elif password != verify:
+            params['verify_error'] = 'Your passwords don\'t match'
+            has_error = True
+
+        if not valid_email(email):
+            params['email_error'] = 'That\'s not a valid email'
+            has_error = True
+
+        if has_error:
+            self.render('signup.html')
+        else:
+            pass
 
 
 class NewPost(Handler):
@@ -63,5 +110,6 @@ class NewPost(Handler):
 
 app = webapp2.WSGIApplication([('/blog', Blog),
                                (r'/blog/(\d+)', Entry),
-                               ('/blog/newpost', NewPost)],
+                               ('/blog/newpost', NewPost),
+                               ('/blog/signup', Signup)],
                                debug=True)
