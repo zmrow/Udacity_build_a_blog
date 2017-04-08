@@ -23,12 +23,25 @@ PASS_RE = re.compile(r"^.{3,20}$")
 EMAIL_RE  = re.compile(r'^[\S]+@[\S]+\.[\S]+$')
 
 def make_secure_val(val):
-    return "%s|%s" % (val, hmac.new(secret, val).hexdigest())
+    return "%s|%s" % (val, hmac.new(SECRET, val).hexdigest())
 
 def check_secure_val(secure_val):
     val = secure_val.split('|')[0]
     if secure_val == make_secure_val(val):
         return val
+
+def make_salt(length = 5):
+    return ''.join(random.choice(letters) for x in xrange(length))
+
+def make_pw_hash(name, pw, salt = None):
+    if not salt:
+        salt = make_salt()
+    h = hashlib.sha256(name + pw + salt).hexdigest()
+    return '%s,%s' % (salt, h)
+
+def valid_pw(name, password, h):
+    salt = h.split(',')[0]
+    return h == make_pw_hash(name, password, salt)
 
 def valid_username(username):
     return username and USER_RE.match(username)
@@ -44,6 +57,22 @@ class BlogPost(db.Model):
     subject = db.StringProperty(required=True)
     content = db.TextProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
+
+
+class User(db.Model):
+    name = db.StringProperty(required=True)
+    pw_hash = db.StringProperty(required=True)
+    email = db.StringProperty()
+
+    @classmethod
+    def exists(cls, name):
+        user = User.all().filter('name =', name).get()
+        return user
+
+    @classmethod
+    def create(cls, name, pw, email = None):
+        pw_hash = make_pw_hash(name, pw)
+        return User(name=name, pw_hash=pw, email=email)
 
 
 class Handler(webapp2.RequestHandler):
@@ -121,8 +150,15 @@ class Signup(Handler):
         if has_error:
             self.render('signup.html', **params)
         else:
-            self.response.headers.add_header('Set-Cookie', 'name=%s; Path=/' % str(username))
-            self.redirect('welcome')
+            # Make sure the user doesn't already exist
+            if User.exists(username):
+                params['user_error'] = 'That user already exists'
+                self.render('signup.html', **params)
+            else:
+                user = User.create(name=username, pw=password, email=email)
+                user.put()
+                self.response.headers.add_header('Set-Cookie', 'name=%s; Path=/' % str(username))
+                self.redirect('welcome')
 
 
 class Welcome(Handler):
