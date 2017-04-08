@@ -72,7 +72,7 @@ class User(db.Model):
     @classmethod
     def create(cls, name, pw, email = None):
         pw_hash = make_pw_hash(name, pw)
-        return User(name=name, pw_hash=pw, email=email)
+        return User(name=name, pw_hash=pw_hash, email=email)
 
 
 class Handler(webapp2.RequestHandler):
@@ -178,9 +178,17 @@ class Login(Handler):
         self.render('login.html')
 
     def post(self):
-        has_error = False
+        login_error = 'Invalid login'
         username = self.request.get('username')
         password = self.request.get('password')
+
+        # Check if user exists
+        user = User.exists(str(username))
+        if user and valid_pw(username, password, str(user.pw_hash)):
+            self.set_secure_cookie('user_id', str(user.key().id()))
+            self.redirect('welcome')
+        else:
+            self.render('login.html', login_error=login_error)
 
 
 class Welcome(Handler):
