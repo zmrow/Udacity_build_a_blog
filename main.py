@@ -86,6 +86,17 @@ class Handler(webapp2.RequestHandler):
     def render(self, template, **kw):
         self.write(self.render_str(template, **kw))
 
+    def set_secure_cookie(self, name, val):
+        cookie_val = make_secure_val(val)
+        self.response.headers.add_header(
+                'Set-Cookie',
+                '%s=%s, Path=/' % (name, cookie_val)
+                )
+
+    def read_secure_cookie(self, name):
+        cookie_val = self.request.cookies.get(name)
+        return cookie_val and check_secure_val(cookie_val)
+
 
 class Blog(Handler):
     def get(self):
@@ -157,18 +168,36 @@ class Signup(Handler):
             else:
                 user = User.create(name=username, pw=password, email=email)
                 user.put()
-                self.response.headers.add_header('Set-Cookie', 'name=%s; Path=/' % str(username))
+                self.set_secure_cookie('user_id', str(user.key().id()))
+                #self.response.headers.add_header('Set-Cookie', 'name=%s; Path=/' % str(username))
                 self.redirect('welcome')
+
+
+class Login(Handler):
+    def get(self):
+        self.render('login.html')
+
+    def post(self):
+        has_error = False
+        username = self.request.get('username')
+        password = self.request.get('password')
 
 
 class Welcome(Handler):
     def get(self):
-        username = self.request.cookies.get('name')
-        self.render('welcome.html', username=username)
+        cookie_val = self.request.cookies.get('user_id')
+        uid = cookie_val and check_secure_val(cookie_val)
+        user = uid and User.get_by_id(int(uid))
+        if user:
+            self.render('welcome.html', username=user.name)
+        else:
+            self.redirect('signup')
+
 
 app = webapp2.WSGIApplication([('/blog', Blog),
                                (r'/blog/(\d+)', Entry),
                                ('/blog/newpost', NewPost),
                                ('/blog/signup', Signup),
+                               ('/blog/login', Login),
                                ('/blog/welcome', Welcome)],
                                debug=True)
