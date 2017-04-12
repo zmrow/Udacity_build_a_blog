@@ -111,6 +111,18 @@ class Entry(Handler):
         self.render('permalink.html', post=post)
 
 
+class EditPost(Handler):
+    def get(self, post_id):
+        cookie_val = self.request.cookies.get('user_id')
+        uid = cookie_val and check_secure_val(cookie_val)
+        if uid:
+            post = BlogPost.get_by_id(int((post_id)))
+            self.render('edit_post.html', subject=post.subject, content=post.content
+        else:
+            error = 'Only logged in users can edit posts'
+            self.redirect('blog')
+
+
 class NewPost(Handler):
     def get(self, subject='', content='', error=''):
         self.render("newpost.html")
@@ -209,8 +221,10 @@ class Welcome(Handler):
             self.redirect('signup')
 
 
-app = webapp2.WSGIApplication([('/blog', Blog),
+app = webapp2.WSGIApplication([('/', Blog),
+                               ('/blog', Blog),
                                (r'/blog/(\d+)', Entry),
+                               (r'/blog/(\d+)/edit', EditPost),
                                ('/blog/newpost', NewPost),
                                ('/blog/signup', Signup),
                                ('/blog/login', Login),
