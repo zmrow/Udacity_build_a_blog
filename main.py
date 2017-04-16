@@ -73,7 +73,7 @@ class BlogPost(db.Model):
     subject = db.StringProperty(required=True)
     content = db.TextProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
-    created_by = db.ReferenceProperty(User)
+    created_by = db.ReferenceProperty(User, required=True)
 
 
 class Handler(webapp2.RequestHandler):
@@ -114,7 +114,7 @@ class MyBlog(Handler):
         cookie_val = self.request.cookies.get('user_id')
         uid = cookie_val and check_secure_val(cookie_val)
         user = uid and User.get_by_id(int(uid))
-        posts = db.GqlQuery('select * from BlogPost order by created DESC')
+        posts = [post for post in BlogPost.all().filter('created_by =', user)]
         self.render('index.html', posts=posts)
 
 
@@ -157,11 +157,14 @@ class NewPost(Handler):
         self.render("newpost.html")
 
     def post(self):
+        cookie_val = self.request.cookies.get('user_id')
+        uid = cookie_val and check_secure_val(cookie_val)
+        user = uid and User.get_by_id(int(uid))
         subject = self.request.get('subject')
         content = self.request.get('content')
 
         if subject and content:
-            post = BlogPost(subject=subject, content=content)
+            post = BlogPost(subject=subject, content=content, created_by=user)
             post.put()
             post_id = post.key().id()
 
