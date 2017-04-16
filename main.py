@@ -57,6 +57,7 @@ class BlogPost(db.Model):
     subject = db.StringProperty(required=True)
     content = db.TextProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
+    created_by = db.ReferenceProperty(User)
 
 
 class User(db.Model):
@@ -97,9 +98,22 @@ class Handler(webapp2.RequestHandler):
         cookie_val = self.request.cookies.get(name)
         return cookie_val and check_secure_val(cookie_val)
 
+    def logged_in(self):
+        cookie_val = self.request.cookies.get('user_id')
+        return cookie_val and check_secure_val(cookie_val)
+
 
 class Blog(Handler):
     def get(self):
+        posts = db.GqlQuery('select * from BlogPost order by created DESC')
+        self.render('index.html', posts=posts)
+
+
+class MyBlog(Handler):
+    def get(self):
+        cookie_val = self.request.cookies.get('user_id')
+        uid = cookie_val and check_secure_val(cookie_val)
+        user = uid and User.get_by_id(int(uid))
         posts = db.GqlQuery('select * from BlogPost order by created DESC')
         self.render('index.html', posts=posts)
 
@@ -113,14 +127,29 @@ class Entry(Handler):
 
 class EditPost(Handler):
     def get(self, post_id):
+        edit_error = 'Only logged in users can edit posts'
         cookie_val = self.request.cookies.get('user_id')
         uid = cookie_val and check_secure_val(cookie_val)
         if uid:
             post = BlogPost.get_by_id(int((post_id)))
-            self.render('edit_post.html', subject=post.subject, content=post.content
+            self.render('edit_post.html', subject=post.subject, content=post.content)
         else:
-            error = 'Only logged in users can edit posts'
+            error = edit_error
             self.redirect('blog')
+
+    def post(self, post_id):
+        edit_error = 'Please enter both a subject and content'
+        subject = self.request.get('subject')
+        content = self.request.get('content')
+
+        if subject and content:
+            post = BlogPost.get_by_id(int(post_id))
+            post.subject = subject
+            post.content = content
+            post.put()
+            self.redirect('blog/%s' % str(post.key().id()))
+        else:
+            self.render('edit_post.html', error=edit_error)
 
 
 class NewPost(Handler):
@@ -223,6 +252,7 @@ class Welcome(Handler):
 
 app = webapp2.WSGIApplication([('/', Blog),
                                ('/blog', Blog),
+                               ('/blog/my', MyBlog),
                                (r'/blog/(\d+)', Entry),
                                (r'/blog/(\d+)/edit', EditPost),
                                ('/blog/newpost', NewPost),
