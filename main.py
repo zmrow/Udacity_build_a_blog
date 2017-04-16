@@ -53,13 +53,6 @@ def valid_email(email):
     return not email or EMAIL_RE.match(email)
 
 
-class BlogPost(db.Model):
-    subject = db.StringProperty(required=True)
-    content = db.TextProperty(required=True)
-    created = db.DateTimeProperty(auto_now_add=True)
-    created_by = db.ReferenceProperty(User)
-
-
 class User(db.Model):
     name = db.StringProperty(required=True)
     pw_hash = db.StringProperty(required=True)
@@ -74,6 +67,13 @@ class User(db.Model):
     def create(cls, name, pw, email = None):
         pw_hash = make_pw_hash(name, pw)
         return User(name=name, pw_hash=pw_hash, email=email)
+
+
+class BlogPost(db.Model):
+    subject = db.StringProperty(required=True)
+    content = db.TextProperty(required=True)
+    created = db.DateTimeProperty(auto_now_add=True)
+    created_by = db.ReferenceProperty(User)
 
 
 class Handler(webapp2.RequestHandler):
