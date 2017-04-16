@@ -115,7 +115,7 @@ class MyBlog(Handler):
         uid = cookie_val and check_secure_val(cookie_val)
         user = uid and User.get_by_id(int(uid))
         posts = [post for post in BlogPost.all().filter('created_by =', user)]
-        self.render('index.html', posts=posts)
+        self.render('index.html', posts=posts, user=user)
 
 
 class Entry(Handler):
@@ -128,8 +128,10 @@ class Entry(Handler):
 class EditPost(Handler):
     def get(self, post_id):
         edit_error = 'Only logged in users can edit posts'
+
         cookie_val = self.request.cookies.get('user_id')
         uid = cookie_val and check_secure_val(cookie_val)
+
         if uid:
             post = BlogPost.get_by_id(int((post_id)))
             self.render('edit_post.html', subject=post.subject, content=post.content)
