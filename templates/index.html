@@ -9,8 +9,8 @@
   <section class="post">
     <div class="row col-md-12">
       <div class="post-subject">
-          <h3 class="text-left">{{ post.subject }}</h3>
-          <h6 class="text-right">{{ post.date_created }}</h6>
+          <h2 class="text-left">{{ post.subject }}</h2>
+          <h4 class="text-left"><small>{{ post.created }}</small></h4>
       </div>
     </div>
 
@@ -22,11 +22,8 @@
 
     <div class="row col-md-12">
       <div class="post-edit-links">
-          <!-- links here -->
-          {% if user %}
-            <a href="#">Edit</a>
-            <a href="#">Delete</a>
-          {% endif %}
+        <a href="#">Edit</a>
+        <a href="#">Delete</a>
       </div>
     </div>
   </section>

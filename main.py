@@ -115,7 +115,7 @@ class MyBlog(Handler):
         uid = cookie_val and check_secure_val(cookie_val)
         user = uid and User.get_by_id(int(uid))
         posts = [post for post in BlogPost.all().filter('created_by =', user)]
-        self.render('index.html', posts=posts, user=user)
+        self.render('myblog.html', posts=posts, user=user)
 
 
 class Entry(Handler):
@@ -242,7 +242,7 @@ class Logout(Handler):
         self.response.headers.add_header(
                 'Set-Cookie',
                 'user_id=; Path=/')
-        self.redirect('signup')
+        self.redirect('/')
 
 class Welcome(Handler):
     def get(self):
@@ -250,7 +250,7 @@ class Welcome(Handler):
         uid = cookie_val and check_secure_val(cookie_val)
         user = uid and User.get_by_id(int(uid))
         if user:
-            self.render('welcome.html', username=user.name)
+            self.render('welcome.html', user=user, username=user.name)
         else:
             self.redirect('signup')
 
