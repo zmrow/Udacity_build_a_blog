@@ -22,8 +22,10 @@
 
     <div class="row col-md-12">
       <div class="post-edit-links">
-        <a href="#">Edit</a>
-        <a href="#">Delete</a>
+        {% if user %}
+          <a href="/blog/{{ post.key().id() }}/edit">Edit</a>
+          <a href="#">Delete</a>
+        {% endif %}
       </div>
     </div>
   </section>

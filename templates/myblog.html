@@ -24,7 +24,7 @@
       <div class="post-edit-links">
           <!-- links here -->
           {% if user %}
-            <a class="text-right" href="#">Edit</a>
+              <a class="text-right" href="/blog/{{ post.key().id() }}/edit">Edit</a>
             <a href="#">Delete</a>
           {% endif %}
       </div>
