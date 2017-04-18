@@ -102,6 +102,15 @@ class Handler(webapp2.RequestHandler):
         cookie_val = self.request.cookies.get('user_id')
         return cookie_val and check_secure_val(cookie_val)
 
+    def initialize(self, *a, **kw):
+        webapp2.RequestHandler.initialize(self, *a, **kw)
+        uid = self.read_secure_cookie('user_id')
+        self.user = uid and User.get_by_id(int(uid))
+
+class RootPage(Handler):
+    def get(self):
+        self.redirect('blog')
+
 
 class Blog(Handler):
     def get(self):
@@ -111,16 +120,15 @@ class Blog(Handler):
 
 class MyBlog(Handler):
     def get(self):
-        cookie_val = self.request.cookies.get('user_id')
-        uid = cookie_val and check_secure_val(cookie_val)
-        user = uid and User.get_by_id(int(uid))
-        posts = [post for post in BlogPost.all().filter('created_by =', user)]
-        self.render('myblog.html', posts=posts, user=user)
+        if not self.user:
+            self.redirect('/')
+
+        posts = [post for post in BlogPost.all().filter('created_by =', self.user)]
+        self.render('myblog.html', posts=posts)
 
 
 class Entry(Handler):
     def get(self, post_id):
-        # self.content.replace('\n', '<br>')
         post = BlogPost.get_by_id(int(post_id))
         self.render('permalink.html', post=post)
 
@@ -129,15 +137,12 @@ class EditPost(Handler):
     def get(self, post_id):
         edit_error = 'Only logged in users can edit posts'
 
-        cookie_val = self.request.cookies.get('user_id')
-        uid = cookie_val and check_secure_val(cookie_val)
-
-        if uid:
+        if self.user:
             post = BlogPost.get_by_id(int((post_id)))
             self.render('edit_post.html', subject=post.subject, content=post.content)
         else:
             error = edit_error
-            self.redirect('blog')
+            self.redirect('/')
 
     def post(self, post_id):
         edit_error = 'Please enter both a subject and content'
@@ -156,17 +161,19 @@ class EditPost(Handler):
 
 class NewPost(Handler):
     def get(self, subject='', content='', error=''):
+        if not self.user:
+            self.redirect('/')
+
         self.render("newpost.html")
 
     def post(self):
-        cookie_val = self.request.cookies.get('user_id')
-        uid = cookie_val and check_secure_val(cookie_val)
-        user = uid and User.get_by_id(int(uid))
+        if not self.user:
+            self.redirect('/')
         subject = self.request.get('subject')
         content = self.request.get('content')
 
         if subject and content:
-            post = BlogPost(subject=subject, content=content, created_by=user)
+            post = BlogPost(subject=subject, content=content, created_by=self.user)
             post.put()
             post_id = post.key().id()
 
@@ -178,6 +185,9 @@ class NewPost(Handler):
 
 class Signup(Handler):
     def get(self):
+        if self.user:
+            self.redirect('welcome')
+
         self.render('signup.html')
 
     def post(self):
@@ -221,6 +231,8 @@ class Signup(Handler):
 
 class Login(Handler):
     def get(self):
+        if self.user:
+            self.redirect('welcome')
         self.render('login.html')
 
     def post(self):
@@ -246,16 +258,16 @@ class Logout(Handler):
 
 class Welcome(Handler):
     def get(self):
-        cookie_val = self.request.cookies.get('user_id')
-        uid = cookie_val and check_secure_val(cookie_val)
-        user = uid and User.get_by_id(int(uid))
-        if user:
-            self.render('welcome.html', user=user, username=user.name)
+        #cookie_val = self.request.cookies.get('user_id')
+        #uid = cookie_val and check_secure_val(cookie_val)
+        #user = uid and User.get_by_id(int(uid))
+        if self.user:
+            self.render('welcome.html', user=self.user, username=self.user.name)
         else:
             self.redirect('signup')
 
 
-app = webapp2.WSGIApplication([('/', Blog),
+app = webapp2.WSGIApplication([('/', RootPage),
                                ('/blog', Blog),
                                ('/blog/my', MyBlog),
                                (r'/blog/(\d+)', Entry),
