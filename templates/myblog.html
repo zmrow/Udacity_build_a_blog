@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>My Blog!</h1>
+<hr>
+
+{% for post in posts %}
+  <section class="post">
+    <div class="row col-md-12">
+      <div class="post-subject">
+          <h3 class="text-left">{{ post.subject }}</h3>
+          <h6 class="text-right">{{ post.date_created }}</h6>
+      </div>
+    </div>
+
+    <div class="row col-md-12">
+      <div class="post-body">
+          {{ post.content }}
+      </div>
+    </div>
+
+    <div class="row col-md-12">
+      <div class="post-edit-links">
+          <!-- links here -->
+          {% if user %}
+            <a class="text-right" href="#">Edit</a>
+            <a href="#">Delete</a>
+          {% endif %}
+      </div>
+    </div>
+  </section>
+{% endfor %}
+
+{% endblock %}
