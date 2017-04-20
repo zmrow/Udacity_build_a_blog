@@ -81,6 +81,7 @@ class Handler(webapp2.RequestHandler):
         self.response.out.write(*a, **kw)
 
     def render_str(self, template, **params):
+        params['user'] = self.user
         t = JINJA_ENV.get_template(template)
         return t.render(params)
 
@@ -153,8 +154,10 @@ class EditPost(Handler):
             post = BlogPost.get_by_id(int(post_id))
             post.subject = subject
             post.content = content
+            print post.subject
+            print post.content
             post.put()
-            self.redirect('blog/%s' % str(post.key().id()))
+            self.redirect('/blog/%s' % str(post.key().id()))
         else:
             self.render('edit_post.html', error=edit_error)
 
@@ -262,7 +265,7 @@ class Welcome(Handler):
         #uid = cookie_val and check_secure_val(cookie_val)
         #user = uid and User.get_by_id(int(uid))
         if self.user:
-            self.render('welcome.html', user=self.user, username=self.user.name)
+            self.render('welcome.html', username=self.user.name)
         else:
             self.redirect('signup')
 
