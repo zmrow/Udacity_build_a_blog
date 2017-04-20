@@ -75,6 +75,11 @@ class BlogPost(db.Model):
     created = db.DateTimeProperty(auto_now_add=True)
     created_by = db.ReferenceProperty(User, required=True)
 
+    @classmethod
+    def exists(cls, post_id):
+        post = BlogPost.get_by_id(int(post_id))
+        return post
+
 
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
@@ -136,14 +141,22 @@ class Entry(Handler):
 
 class EditPost(Handler):
     def get(self, post_id):
-        edit_error = 'Only logged in users can edit posts'
+        if not BlogPost.exists(post_id):
+            self.error(404)
+            return
 
-        if self.user:
-            post = BlogPost.get_by_id(int((post_id)))
+        post = BlogPost.get_by_id(int((post_id)))
+
+        if self.user and self.user == post.created_by:
             self.render('edit_post.html', subject=post.subject, content=post.content)
+        # If the current user is not the same as the posts' author, throw an error
+        elif self.user != post.created_by:
+            error = 'You can\'t edit posts you did not create!'
+            self.render('permalink.html', post=post, error=error)
         else:
-            error = edit_error
-            self.redirect('/')
+            # We should never get here as there should be no user, handle this anyway
+            error = 'You are not logged in; you cannot edit posts!'
+            self.render('permalink.html', post=post, error=error)
 
     def post(self, post_id):
         edit_error = 'Please enter both a subject and content'
@@ -154,8 +167,6 @@ class EditPost(Handler):
             post = BlogPost.get_by_id(int(post_id))
             post.subject = subject
             post.content = content
-            print post.subject
-            print post.content
             post.put()
             self.redirect('/blog/%s' % str(post.key().id()))
         else:

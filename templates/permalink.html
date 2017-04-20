@@ -2,11 +2,11 @@
 
 {% block content %}
 
+<div class="error">{{ error }}</div>
 <div class="post">
   <div class="post-title"><h2>{{ post.subject }}</h2></div>
   <hr>
   <br>
-
   <div class="post-body">{{ post.content }}</div>
 </div>
 {% endblock %}
