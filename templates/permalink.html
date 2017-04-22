@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="link-back"><a href="/blog">Back</a></div>
+<div class="link-back"><a href="/blog">Back to posts</a></div>
 
 <div class="error">{{ error }}</div>
 <section class="post">
@@ -22,7 +22,7 @@
     <div class="post-edit-links">
       {% if user.key() == post.created_by.key() %}
         <a href="/blog/{{ post.key().id() }}/edit">Edit</a>
-        <a href="#">Delete</a>
+        <a href="/blog/{{ post.key().id() }}/delete">Delete</a>
       {% elif user %}
         <a href="/blog/{{ post.key().id() }}/comment">Comment</a>
       {% endif %}

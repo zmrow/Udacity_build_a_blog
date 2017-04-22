@@ -141,6 +141,10 @@ class MyBlog(Handler):
 
 class Entry(Handler):
     def get(self, post_id):
+        if not BlogPost.exists(post_id):
+            self.error(404)
+            return
+
         post = BlogPost.get_by_id(int(post_id))
         self.render('permalink.html', post=post)
 
@@ -177,6 +181,32 @@ class EditPost(Handler):
             self.redirect('/blog/%s' % str(post.key().id()))
         else:
             self.render('edit_post.html', error=edit_error)
+
+
+class DeletePost(Handler):
+    def get(self, post_id):
+        if not BlogPost.exists(post_id):
+            self.error(404)
+            return
+
+        post = BlogPost.get_by_id(int((post_id)))
+
+        if self.user and self.user.key() == post.created_by.key():
+            self.render('delete_post.html', post=post)
+        # If the current user is not the same as the posts' author, throw an error
+        elif self.user.key() != post.created_by.key():
+            error = 'You can\'t delete posts you did not create!'
+            self.render('permalink.html', post=post, error=error)
+        else:
+            # We should never get here as there should be no user, handle this anyway
+            error = 'You are not logged in; you cannot delete posts!'
+            self.render('permalink.html', post=post, error=error)
+
+    def post(self, post_id):
+        alert = 'Blog post successfully deleted'
+        post = BlogPost.get_by_id(int(post_id))
+        post.delete()
+        self.render('welcome.html', alert=alert)
 
 
 class NewPost(Handler):
@@ -305,12 +335,12 @@ class Logout(Handler):
         self.redirect('/')
 
 class Welcome(Handler):
-    def get(self):
+    def get(self, alert):
         #cookie_val = self.request.cookies.get('user_id')
         #uid = cookie_val and check_secure_val(cookie_val)
         #user = uid and User.get_by_id(int(uid))
         if self.user:
-            self.render('welcome.html', username=self.user.name)
+            self.render('welcome.html', username=self.user.name, alert=alert)
         else:
             self.redirect('signup')
 
@@ -320,6 +350,7 @@ app = webapp2.WSGIApplication([('/', RootPage),
                                ('/blog/my', MyBlog),
                                (r'/blog/(\d+)', Entry),
                                (r'/blog/(\d+)/edit', EditPost),
+                               (r'/blog/(\d+)/delete', DeletePost),
                                ('/blog/newpost', NewPost),
                                (r'/blog/(\d+)/comment', CommentPost),
                                ('/blog/signup', Signup),

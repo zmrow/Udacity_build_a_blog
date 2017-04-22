@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Delete Post</h2>
+<div class="error">{{ error }}</div>
+<p>Are you sure you want to delete this post?</p>
+<form id="delete_post" method="post">
+  <button type="submit" class="btn btn-danger">Delete</button>
+  <button type="button" class="btn btn-link">
+    <a href="/blog/{{ post.key().id() }}">Cancel</a>
+  </button>
+</form>
+
+<section class="post">
+  <div class="row col-md-12">
+    <div class="post-subject">
+        <h3 class="text-left">{{ post.subject }}</h3>
+        <h4 class="text-left"><small>{{ post.created }} by {{ post.created_by.name }}</small></h4>
+    </div>
+  </div>
+
+  <div class="row col-md-12">
+    <div class="post-body">
+        {{ post.content }}
+    </div>
+  </div>
+</section>
+{% endblock %}
