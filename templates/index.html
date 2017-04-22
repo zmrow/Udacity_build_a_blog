@@ -22,9 +22,10 @@
 
     <div class="row col-md-12">
       <div class="post-edit-links">
-        {% if user %}
+        {% if user.key() == post.created_by.key() %}
           <a href="/blog/{{ post.key().id() }}/edit">Edit</a>
           <a href="#">Delete</a>
+        {% elif user %}
           <a href="/blog/{{ post.key().id() }}/comment">Comment</a>
         {% endif %}
       </div>

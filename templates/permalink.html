@@ -1,12 +1,30 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="link-back"><a href="/blog">Back</a></div>
 
 <div class="error">{{ error }}</div>
-<div class="post">
-  <div class="post-title"><h2>{{ post.subject }}</h2></div>
-  <hr>
-  <br>
-  <div class="post-body">{{ post.content }}</div>
-</div>
+<section class="post">
+  <div class="row col-md-12">
+    <div class="post-subject">
+        <h2 class="text-left">{{ post.subject }}</h2>
+        <h4 class="text-left"><small>{{ post.created }} by {{ post.created_by.name }}</small></h4>
+    </div>
+  </div>
+
+  <div class="row col-md-12">
+    <div class="post-body">
+        {{ post.content }}
+    </div>
+  </div>
+
+  <div class="row col-md-12">
+    <div class="post-edit-links">
+      {% if user.key() == post.created_by.key() %}
+        <a href="/blog/{{ post.key().id() }}/edit">Edit</a>
+        <a href="#">Delete</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
 {% endblock %}
