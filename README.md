@@ -7,7 +7,7 @@ This project is a simple multi-user blog engine created for the Udacity Full Sta
 - Post comments on other users' posts (all CRUD operations supported)
 - Like other users' posts
 
-This project makes use of the awesome [Bootstrap framework] (http://getbootstrap.com/).
+This project makes use of the awesome [Bootstrap framework](http://getbootstrap.com/).
 
 ## Quick start
 
@@ -21,7 +21,7 @@ Simple:
 - Win
 
 ## What's what
-The repo has only a few files in it:
+The repo has quite a few files:
 
 - `main.py`: this is the main entrypoint for the application
 - `app.yaml`: this is the main configuration file for Google App Engine
@@ -30,6 +30,7 @@ The repo has only a few files in it:
 
 ## TODO
 - Tests - I've found that things have a tendency to break when you least expect it
+- Better User authentication and session support (don't spin my own)
 - Support image upload
 - Better front end styling
 - Tests
