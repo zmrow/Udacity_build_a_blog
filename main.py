@@ -75,6 +75,7 @@ class BlogPost(db.Model):
     content = db.TextProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
     created_by = db.ReferenceProperty(User, required=True)
+    likes = db.StringListProperty()
 
     @classmethod
     def exists(cls, post_id):
@@ -162,7 +163,7 @@ class EditPost(Handler):
             self.error(404)
             return
 
-        post = BlogPost.get_by_id(int((post_id)))
+        post = BlogPost.get_by_id(int(post_id))
 
         if self.user and self.user.key() == post.created_by.key():
             self.render('edit_post.html', post=post)
@@ -216,6 +217,28 @@ class DeletePost(Handler):
         self.render('welcome.html', alert=alert)
 
 
+class LikePost(Handler):
+    def post(self, post_id):
+        if not self.user:
+            error = 'You must be logged in to Like posts!'
+            self.render('login', error=error)
+
+        post = BlogPost.get_by_id(int(post_id))
+        type(self.user.key().id())
+        if self.user.key() != post.created_by.key():
+            if self.user.name not in post.likes:
+                post.likes.append(self.user.name)
+                post.put()
+                time.sleep(.5)
+                self.redirect('/')
+            else:
+                error = 'You may only like a post one time'
+                self.render('permalink.html', post=post, error=error)
+        else:
+            error = 'You may not like your own posts'
+            self.render('permalink.html', post=post, error=error)
+
+
 class NewPost(Handler):
     def get(self, subject='', content='', error=''):
         if not self.user:
@@ -230,7 +253,7 @@ class NewPost(Handler):
         content = self.request.get('content')
 
         if subject and content:
-            post = BlogPost(subject=subject, content=content, created_by=self.user)
+            post = BlogPost(subject=subject, content=content, created_by=self.user, likes=[])
             post.put()
             post_id = post.key().id()
 
@@ -421,6 +444,7 @@ app = webapp2.WSGIApplication([('/', RootPage),
                                (r'/blog/(\d+)', Entry),
                                (r'/blog/(\d+)/edit', EditPost),
                                (r'/blog/(\d+)/delete', DeletePost),
+                               (r'/blog/(\d+)/like', LikePost),
                                ('/blog/newpost', NewPost),
                                (r'/blog/(\d+)/comment', NewComment),
                                (r'/blog/(\d+)/comment/(\d+)/edit', EditComment),

@@ -7,7 +7,14 @@
 {% for post in posts %}
   <section class="post">
     <div class="row col-md-12 post-subject">
-      <h2 class="text-left"><a href="/blog/{{ post.key().id() }}">{{ post.subject }}</a></h2>
+      <h2 class="text-left">
+          <a href="/blog/{{ post.key().id() }}">{{ post.subject }}</a>
+          {% if post.likes|length == 1 %}
+            <small>{{ post.likes|length }} like</small>
+          {% else %}
+            <small>{{ post.likes|length }} likes</small>
+          {% endif%}
+      </h2>
       <h4 class="text-left"><small>{{ post.created }} by {{ post.created_by.name }}</small></h4>
     </div>
 
@@ -16,7 +23,7 @@
     </div>
 
     <div class="row col-md-12 post-edit-links">
-      {% if user.key() == post.created_by.key() %}
+      {% if user and user.key().id() == post.created_by.key().id() %}
         <a href="/blog/{{ post.key().id() }}/edit">Edit</a>
         <a href="/blog/{{ post.key().id() }}/delete">Delete</a>
       {% elif user %}

@@ -6,7 +6,14 @@
 <div class="error">{{ error }}</div>
 <section class="post">
   <div class="row col-md-12 post-subject">
-    <h2 class="text-left">{{ post.subject }}</h2>
+    <h2 class=text-left>{{ post.subject }}</h2>
+
+    <form class="inline" id="like_form" action="/blog/{{ post.key().id() }}/like" method="post">
+      <button type="submit" form="like_form" class="btn btn-xs btn-primary inline">
+          <span class="glyphicon glyphicon-thumbs-up inline"></span> Like
+      </button>
+    </form>
+
     <h4 class="text-left"><small>{{ post.created }} by {{ post.created_by.name }}</small></h4>
   </div>
 
