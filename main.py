@@ -55,22 +55,26 @@ def valid_email(email):
 
 
 class User(db.Model):
+    """User db Model"""
     name = db.StringProperty(required=True)
     pw_hash = db.StringProperty(required=True)
     email = db.StringProperty()
 
     @classmethod
     def exists(cls, name):
+        """Class method to determine if a user exists"""
         user = User.all().filter('name =', name).get()
         return user
 
     @classmethod
     def create(cls, name, pw, email = None):
+        """Class method to create a User object"""
         pw_hash = make_pw_hash(name, pw)
         return User(name=name, pw_hash=pw_hash, email=email)
 
 
 class BlogPost(db.Model):
+    """Blog Post db Model"""
     subject = db.StringProperty(required=True)
     content = db.TextProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
@@ -79,10 +83,12 @@ class BlogPost(db.Model):
 
     @classmethod
     def exists(cls, post_id):
+        """Class method to determine if a blog post exists"""
         post = BlogPost.get_by_id(int(post_id))
         return post
 
 class Comment(db.Model):
+    """Comment db Model"""
     author = db.ReferenceProperty(User, required=True)
     content = db.TextProperty(required=True)
     post_id = db.ReferenceProperty(BlogPost, required=True)
@@ -90,11 +96,13 @@ class Comment(db.Model):
 
     @classmethod
     def exists(cls, comment_id):
+        """Class method to determine if a comment exists"""
         comment = Comment.get_by_id(int(comment_id))
         return comment
 
 
 class Handler(webapp2.RequestHandler):
+    """Main Handler class for commonly used methods"""
     def write(self, *a, **kw):
         self.response.out.write(*a, **kw)
 
@@ -127,17 +135,20 @@ class Handler(webapp2.RequestHandler):
         self.user = uid and User.get_by_id(int(uid))
 
 class RootPage(Handler):
+    """Handler for main page"""
     def get(self):
         self.redirect('blog')
 
 
 class Blog(Handler):
+    """Additional Handler for main page"""
     def get(self):
         posts = db.GqlQuery('select * from BlogPost order by created DESC')
         self.render('index.html', posts=posts)
 
 
 class MyBlog(Handler):
+    """Handler for page container only currently logged in users posts"""
     def get(self):
         if not self.user:
             self.redirect('/')
@@ -147,6 +158,7 @@ class MyBlog(Handler):
 
 
 class Entry(Handler):
+    """Handler for viewing a single entry"""
     def get(self, post_id):
         if not BlogPost.exists(post_id):
             self.error(404)
@@ -158,6 +170,7 @@ class Entry(Handler):
 
 
 class EditPost(Handler):
+    """Handler for editing a single entry"""
     def get(self, post_id):
         if not BlogPost.exists(post_id):
             self.error(404)
@@ -192,6 +205,7 @@ class EditPost(Handler):
 
 
 class DeletePost(Handler):
+    """Handler for deleting a single entry"""
     def get(self, post_id):
         if not BlogPost.exists(post_id):
             self.error(404)
@@ -218,6 +232,7 @@ class DeletePost(Handler):
 
 
 class LikePost(Handler):
+    """Handler for liking a single entry"""
     def post(self, post_id):
         if not self.user:
             error = 'You must be logged in to Like posts!'
@@ -240,6 +255,7 @@ class LikePost(Handler):
 
 
 class NewPost(Handler):
+    """Handler for creating a single entry"""
     def get(self, subject='', content='', error=''):
         if not self.user:
             self.redirect('/')
@@ -264,6 +280,7 @@ class NewPost(Handler):
 
 
 class NewComment(Handler):
+    """Handler for creating a single comment"""
     def get(self, post_id, error=''):
         if not self.user:
             self.redirect('%s' % post_id)
@@ -293,6 +310,7 @@ class NewComment(Handler):
 
 
 class EditComment(Handler):
+    """Handler for editing a single comment"""
     def get(self, post_id, comment_id):
         if not BlogPost.exists(post_id) or not Comment.exists(comment_id):
             self.error(404)
@@ -328,6 +346,7 @@ class EditComment(Handler):
 
 
 class DeleteComment(Handler):
+    """Handler for deleting a single comment"""
     def get(self, post_id, comment_id):
         if not BlogPost.exists(post_id) or not Comment.exists(comment_id):
             self.error(404)
@@ -358,6 +377,7 @@ class DeleteComment(Handler):
 
 
 class Signup(Handler):
+    """Handler for signing up"""
     def get(self):
         if self.user:
             self.redirect('welcome')
@@ -404,6 +424,7 @@ class Signup(Handler):
 
 
 class Login(Handler):
+    """Handler for logging in"""
     def get(self):
         if self.user:
             self.redirect('welcome')
@@ -424,6 +445,7 @@ class Login(Handler):
 
 
 class Logout(Handler):
+    """Handler for logging out"""
     def get(self):
         self.response.headers.add_header(
                 'Set-Cookie',
@@ -431,6 +453,7 @@ class Logout(Handler):
         self.redirect('/')
 
 class Welcome(Handler):
+    """Handler for user home/welcome page"""
     def get(self, alert=''):
         if self.user:
             self.render('welcome.html', alert=alert)
@@ -438,6 +461,7 @@ class Welcome(Handler):
             self.redirect('signup')
 
 
+# Main router
 app = webapp2.WSGIApplication([('/', RootPage),
                                ('/blog', Blog),
                                ('/blog/my', MyBlog),
