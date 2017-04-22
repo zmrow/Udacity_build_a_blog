@@ -19,7 +19,7 @@
     <div class="row col-md-12 post-edit-links">
       {% if user %}
         <a href="/blog/{{ post.key().id() }}/edit">Edit</a>
-        <a href="#">Delete</a>
+        <a href="/blog/{{ post.key().id() }}/delete">Delete</a>
       {% endif %}
     </div>
   </section>

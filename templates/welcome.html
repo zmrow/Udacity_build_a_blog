@@ -1,12 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="alert alert-warning alert-dismissible" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+<div class="message">
   {{ alert }}
 </div>
 
-<h1>Welcome, {{ username }}!!!</h1>
+<h1>Welcome, {{ user.name }}!!!</h1>
 <hr>
 <div class="welcome-nav">
     <h3>What would you like to do?</h3>
