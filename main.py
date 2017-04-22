@@ -80,6 +80,12 @@ class BlogPost(db.Model):
         post = BlogPost.get_by_id(int(post_id))
         return post
 
+class Comment(db.Model):
+    author = db.ReferenceProperty(User, required=True)
+    content = db.TextProperty(required=True)
+    post_id = db.ReferenceProperty(BlogPost, required=True)
+    created = db.DateTimeProperty(auto_now_add=True)
+
 
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
@@ -147,10 +153,10 @@ class EditPost(Handler):
 
         post = BlogPost.get_by_id(int((post_id)))
 
-        if self.user and self.user == post.created_by:
+        if self.user and self.user.key() == post.created_by.key():
             self.render('edit_post.html', subject=post.subject, content=post.content)
         # If the current user is not the same as the posts' author, throw an error
-        elif self.user != post.created_by:
+        elif self.user.key() != post.created_by.key():
             error = 'You can\'t edit posts you did not create!'
             self.render('permalink.html', post=post, error=error)
         else:
@@ -195,6 +201,34 @@ class NewPost(Handler):
         else:
             error = "Please enter both a subject and blog post"
             self.render("newpost.html", subject=subject, content=content, error=error)
+
+
+class CommentPost(Handler):
+    def get(self, post_id, content='', error=''):
+        if not self.user:
+            self.redirect('%s' % post_id)
+
+        if not BlogPost.exists(post_id):
+            self.error(404)
+            return
+
+        self.render("post_comment.html")
+
+    def post(self, post_id):
+        if not self.user:
+            self.redirect('/')
+
+        post = BlogPost.get_by_id(int(post_id))
+        content = self.request.get('content')
+
+        if content:
+            comment = Comment(author=self.user, content=content, post_id=post)
+            comment.put()
+
+            self.redirect('/blog/%s' % post_id)
+        else:
+            error = "Please enter your comments!"
+            self.render("post_comment.html", content=content, error=error)
 
 
 class Signup(Handler):
@@ -287,6 +321,7 @@ app = webapp2.WSGIApplication([('/', RootPage),
                                (r'/blog/(\d+)', Entry),
                                (r'/blog/(\d+)/edit', EditPost),
                                ('/blog/newpost', NewPost),
+                               (r'/blog/(\d+)/comment', CommentPost),
                                ('/blog/signup', Signup),
                                ('/blog/login', Login),
                                ('/blog/logout', Logout),
