@@ -5,28 +5,42 @@
 
 <div class="error">{{ error }}</div>
 <section class="post">
-  <div class="row col-md-12">
-    <div class="post-subject">
-        <h2 class="text-left">{{ post.subject }}</h2>
-        <h4 class="text-left"><small>{{ post.created }} by {{ post.created_by.name }}</small></h4>
-    </div>
+  <div class="row col-md-12 post-subject">
+    <h2 class="text-left">{{ post.subject }}</h2>
+    <h4 class="text-left"><small>{{ post.created }} by {{ post.created_by.name }}</small></h4>
   </div>
 
-  <div class="row col-md-12">
-    <div class="post-body">
-        {{ post.content }}
-    </div>
+  <div class="row col-md-12 post-body">
+    {{ post.content }}
   </div>
 
-  <div class="row col-md-12">
-    <div class="post-edit-links">
-      {% if user.key() == post.created_by.key() %}
-        <a href="/blog/{{ post.key().id() }}/edit">Edit</a>
-        <a href="/blog/{{ post.key().id() }}/delete">Delete</a>
-      {% elif user %}
-        <a href="/blog/{{ post.key().id() }}/comment">Comment</a>
-      {% endif %}
-    </div>
+  <div class="row col-md-12 post-edit-links">
+    {% if user.key() == post.created_by.key() %}
+      <a href="/blog/{{ post.key().id() }}/edit">Edit</a>
+      <a href="/blog/{{ post.key().id() }}/delete">Delete</a>
+    {% elif user %}
+      <a href="/blog/{{ post.key().id() }}/comment">Comment</a>
+    {% endif %}
   </div>
 </section>
+
+
+<div class="row col-md-12"><h3>Comments</h3></div>
+{% for comment in comments %}
+  <section class="row col-md-12 comment">
+    <div class="row col-md-12 comment-content">
+      {{ comment.content }}
+    </div>
+
+    <div class="row col-md-12 post-subject">
+      <small>{{ comment.created }} by {{ comment.author.name }}</small>
+      {% if user.key() == comment.author.key() %}
+        <small><a href="/blog/{{ post.key().id() }}/comment/{{ comment.key().id() }}/edit">Edit</a></small>
+        <small><a href="/blog/{{ post.key().id() }}/comment/{{ comment.key().id() }}/delete">Delete</a></small>
+      {% endif %}
+    </div>
+
+  </section>
+  <br>
+{% endfor %}
 {% endblock %}

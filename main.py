@@ -3,6 +3,7 @@ import re
 import random
 import hashlib
 import hmac
+import time
 from string import letters
 import jinja2
 import webapp2
@@ -86,6 +87,11 @@ class Comment(db.Model):
     post_id = db.ReferenceProperty(BlogPost, required=True)
     created = db.DateTimeProperty(auto_now_add=True)
 
+    @classmethod
+    def exists(cls, comment_id):
+        comment = Comment.get_by_id(int(comment_id))
+        return comment
+
 
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
@@ -146,7 +152,8 @@ class Entry(Handler):
             return
 
         post = BlogPost.get_by_id(int(post_id))
-        self.render('permalink.html', post=post)
+        comments = [c for c in Comment.all().filter('post_id =', post)]
+        self.render('permalink.html', post=post, comments=comments)
 
 
 class EditPost(Handler):
@@ -233,8 +240,8 @@ class NewPost(Handler):
             self.render("newpost.html", subject=subject, content=content, error=error)
 
 
-class CommentPost(Handler):
-    def get(self, post_id, content='', error=''):
+class NewComment(Handler):
+    def get(self, post_id, error=''):
         if not self.user:
             self.redirect('%s' % post_id)
 
@@ -254,11 +261,77 @@ class CommentPost(Handler):
         if content:
             comment = Comment(author=self.user, content=content, post_id=post)
             comment.put()
+            time.sleep(.5) # Give the db time to operate before redirecting
 
             self.redirect('/blog/%s' % post_id)
         else:
             error = "Please enter your comments!"
             self.render("post_comment.html", content=content, error=error)
+
+
+class EditComment(Handler):
+    def get(self, post_id, comment_id):
+        if not BlogPost.exists(post_id) or not Comment.exists(comment_id):
+            self.error(404)
+            return
+
+        post = BlogPost.get_by_id(int((post_id)))
+        comment = Comment.get_by_id(int(comment_id))
+
+        if self.user and self.user.key() == comment.author.key():
+            self.render('edit_comment.html', post=post, comment=comment)
+        # If the current user is not the same as the comments' author, throw an error
+        elif self.user.key() != comment.author.key():
+            error = 'You can\'t edit comments you did not create!'
+            self.render('permalink.html', post=post, comment=comment, error=error)
+        else:
+            # We should never get here as there should be no user, handle this anyway
+            error = 'You are not logged in; you cannot edit posts!'
+            self.render('permalink.html', post=post, comment=comment, error=error)
+
+    def post(self, post_id, comment_id):
+        edit_error = 'Please enter your comments!'
+        content = self.request.get('content')
+
+        if content:
+            post = BlogPost.get_by_id(int((post_id)))
+            comment = Comment.get_by_id(int(comment_id))
+            comment.content = content
+            comment.put()
+            time.sleep(.5)
+            self.redirect('/blog/%s' % str(post.key().id()))
+        else:
+            self.render('edit_comment.html', error=edit_error)
+
+
+class DeleteComment(Handler):
+    def get(self, post_id, comment_id):
+        if not BlogPost.exists(post_id) or not Comment.exists(comment_id):
+            self.error(404)
+            return
+
+        post = BlogPost.get_by_id(int((post_id)))
+        comment = Comment.get_by_id(int(comment_id))
+
+        if self.user and self.user.key() == comment.author.key():
+            self.render('delete_comment.html', post=post, comment=comment)
+        # If the current user is not the same as the comments' author, throw an error
+        elif self.user.key() != comment.created_by.key():
+            error = 'You can\'t delete comments you did not create!'
+            self.render('permalink.html', post=post, comment=comment, error=error)
+        else:
+            # We should never get here as there should be no user, handle this anyway
+            error = 'You are not logged in; you cannot delete comments!'
+            self.render('permalink.html', post=post, comment=comment, error=error)
+
+    def post(self, post_id, comment_id):
+        alert = 'Comment successfully deleted'
+        comment = Comment.get_by_id(int(comment_id))
+        post = BlogPost.get_by_id(int((post_id)))
+
+        comment.delete()
+
+        self.render('welcome.html', alert=alert)
 
 
 class Signup(Handler):
@@ -349,7 +422,9 @@ app = webapp2.WSGIApplication([('/', RootPage),
                                (r'/blog/(\d+)/edit', EditPost),
                                (r'/blog/(\d+)/delete', DeletePost),
                                ('/blog/newpost', NewPost),
-                               (r'/blog/(\d+)/comment', CommentPost),
+                               (r'/blog/(\d+)/comment', NewComment),
+                               (r'/blog/(\d+)/comment/(\d+)/edit', EditComment),
+                               (r'/blog/(\d+)/comment/(\d+)/delete', DeleteComment),
                                ('/blog/signup', Signup),
                                ('/blog/login', Login),
                                ('/blog/logout', Logout),
