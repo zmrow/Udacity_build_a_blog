@@ -154,7 +154,7 @@ class EditPost(Handler):
         post = BlogPost.get_by_id(int((post_id)))
 
         if self.user and self.user.key() == post.created_by.key():
-            self.render('edit_post.html', subject=post.subject, content=post.content)
+            self.render('edit_post.html', post=post)
         # If the current user is not the same as the posts' author, throw an error
         elif self.user.key() != post.created_by.key():
             error = 'You can\'t edit posts you did not create!'
@@ -212,7 +212,7 @@ class CommentPost(Handler):
             self.error(404)
             return
 
-        self.render("post_comment.html")
+        self.render("post_comment.html", post_id = post_id)
 
     def post(self, post_id):
         if not self.user:
