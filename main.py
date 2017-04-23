@@ -376,6 +376,7 @@ class EditComment(Handler):
         user_error = 'You can\'t edit comments you did not create!'
         content = self.request.get('content')
         post = BlogPost.get_by_id(int((post_id)))
+        comment = Comment.get_by_id(int(comment_id))
 
         if self.user.key() == comment.author.key():
             if content:
@@ -433,7 +434,7 @@ class DeleteComment(Handler):
         post = BlogPost.get_by_id(int((post_id)))
         comment = Comment.get_by_id(int(comment_id))
         alert = 'Comment successfully deleted'
-        error = 'You can\'t delete comments you did not create!'
+        user_error = 'You can\'t delete comments you did not create!'
 
         if self.user.key() == comment.author.key():
             comment.delete()
@@ -444,7 +445,6 @@ class DeleteComment(Handler):
                         comment=comment,
                         error=user_error
                         )
-
 
 
 class Signup(Handler):
