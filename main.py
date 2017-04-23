@@ -396,6 +396,7 @@ class EditComment(Handler):
 
 class DeleteComment(Handler):
     """Handler for deleting a single comment"""
+    @login_required
     def get(self, post_id, comment_id):
         if not BlogPost.exists(post_id) or not Comment.exists(comment_id):
             self.error(404)
@@ -404,7 +405,7 @@ class DeleteComment(Handler):
         post = BlogPost.get_by_id(int((post_id)))
         comment = Comment.get_by_id(int(comment_id))
 
-        if self.user and self.user.key() == comment.author.key():
+        if self.user.key() == comment.author.key():
             self.render('delete_comment.html', post=post, comment=comment)
         # If the current user is not = the comments' author, throw an error
         elif self.user.key() != comment.created_by.key():
@@ -423,13 +424,27 @@ class DeleteComment(Handler):
                         error=error
                         )
 
+    @login_required
     def post(self, post_id, comment_id):
-        alert = 'Comment successfully deleted'
+        if not BlogPost.exists(post_id) or not Comment.exists(comment_id):
+            self.error(404)
+            return
+
+        post = BlogPost.get_by_id(int((post_id)))
         comment = Comment.get_by_id(int(comment_id))
+        alert = 'Comment successfully deleted'
+        error = 'You can\'t delete comments you did not create!'
 
-        comment.delete()
+        if self.user.key() == comment.author.key():
+            comment.delete()
+            self.render('welcome.html', alert=alert)
+        else:
+            self.render('permalink.html',
+                        post=post,
+                        comment=comment,
+                        error=user_error
+                        )
 
-        self.render('welcome.html', alert=alert)
 
 
 class Signup(Handler):
