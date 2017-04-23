@@ -339,6 +339,7 @@ class NewComment(Handler):
 
 class EditComment(Handler):
     """Handler for editing a single comment"""
+    @login_required
     def get(self, post_id, comment_id):
         if not BlogPost.exists(post_id) or not Comment.exists(comment_id):
             self.error(404)
@@ -347,7 +348,7 @@ class EditComment(Handler):
         post = BlogPost.get_by_id(int((post_id)))
         comment = Comment.get_by_id(int(comment_id))
 
-        if self.user and self.user.key() == comment.author.key():
+        if self.user.key() == comment.author.key():
             self.render('edit_comment.html', post=post, comment=comment)
         # If the current user is not = comments' author, throw an error
         elif self.user.key() != comment.author.key():
@@ -366,19 +367,31 @@ class EditComment(Handler):
                         error=error
                         )
 
+    @login_required
     def post(self, post_id, comment_id):
+        if not BlogPost.exists(post_id) or not Comment.exists(comment_id):
+            self.error(404)
+            return
         edit_error = 'Please enter your comments!'
+        user_error = 'You can\'t edit comments you did not create!'
         content = self.request.get('content')
+        post = BlogPost.get_by_id(int((post_id)))
 
-        if content:
-            post = BlogPost.get_by_id(int((post_id)))
-            comment = Comment.get_by_id(int(comment_id))
-            comment.content = content
-            comment.put()
-            time.sleep(.5)
-            self.redirect('/blog/%s' % str(post.key().id()))
+        if self.user.key() == comment.author.key():
+            if content:
+                comment = Comment.get_by_id(int(comment_id))
+                comment.content = content
+                comment.put()
+                time.sleep(.5)
+                return self.redirect('/blog/%s' % str(post.key().id()))
+            else:
+                self.render('edit_comment.html', post=post, error=edit_error)
         else:
-            self.render('edit_comment.html', error=edit_error)
+            self.render('permalink.html',
+                        post=post,
+                        comment=comment,
+                        error=user_error
+                        )
 
 
 class DeleteComment(Handler):
