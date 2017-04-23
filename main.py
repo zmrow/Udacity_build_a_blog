@@ -148,7 +148,7 @@ class Handler(webapp2.RequestHandler):
 class RootPage(Handler):
     """Handler for main page"""
     def get(self):
-        self.redirect('blog')
+        return self.redirect('blog')
 
 
 class Blog(Handler):
@@ -268,7 +268,7 @@ class LikePost(Handler):
                 post.likes.append(self.user.name)
                 post.put()
                 time.sleep(.5)
-                self.redirect('/')
+                return self.redirect('/')
             else:
                 error = 'You may only like a post one time'
                 self.render('permalink.html', post=post, error=error)
@@ -297,7 +297,7 @@ class NewPost(Handler):
             post.put()
             post_id = post.key().id()
 
-            self.redirect('%s' % post_id)
+            return self.redirect('%s' % post_id)
         else:
             error = "Please enter both a subject and blog post"
             self.render("newpost.html",
@@ -451,7 +451,7 @@ class Signup(Handler):
     """Handler for signing up"""
     def get(self):
         if self.user:
-            self.redirect('welcome')
+            return self.redirect('welcome')
 
         self.render('signup.html')
 
@@ -490,14 +490,14 @@ class Signup(Handler):
                 user = User.create(name=username, pw=password, email=email)
                 user.put()
                 self.set_secure_cookie('user_id', str(user.key().id()))
-                self.redirect('welcome')
+                return self.redirect('welcome')
 
 
 class Login(Handler):
     """Handler for logging in"""
     def get(self):
         if self.user:
-            self.redirect('welcome')
+            return self.redirect('welcome')
         self.render('login.html')
 
     def post(self):
@@ -509,7 +509,7 @@ class Login(Handler):
         user = User.exists(str(username))
         if user and valid_pw(username, password, str(user.pw_hash)):
             self.set_secure_cookie('user_id', str(user.key().id()))
-            self.redirect('welcome')
+            return self.redirect('welcome')
         else:
             self.render('login.html', login_error=login_error)
 
@@ -520,16 +520,14 @@ class Logout(Handler):
         self.response.headers.add_header(
                 'Set-Cookie',
                 'user_id=; Path=/')
-        self.redirect('/')
+        return self.redirect('/')
 
 
 class Welcome(Handler):
     """Handler for user home/welcome page"""
+    @login_required
     def get(self, alert=''):
-        if self.user:
-            self.render('welcome.html', alert=alert)
-        else:
-            self.redirect('signup')
+        self.render('welcome.html', alert=alert)
 
 
 # Main router
