@@ -21,34 +21,42 @@ JINJA_ENV = jinja2.Environment(
 SECRET = '$w0rdf1sh'
 USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
 PASS_RE = re.compile(r"^.{3,20}$")
-EMAIL_RE  = re.compile(r'^[\S]+@[\S]+\.[\S]+$')
+EMAIL_RE = re.compile(r'^[\S]+@[\S]+\.[\S]+$')
+
 
 def make_secure_val(val):
     return "%s|%s" % (val, hmac.new(SECRET, val).hexdigest())
+
 
 def check_secure_val(secure_val):
     val = secure_val.split('|')[0]
     if secure_val == make_secure_val(val):
         return val
 
-def make_salt(length = 5):
+
+def make_salt(length=5):
     return ''.join(random.choice(letters) for x in xrange(length))
 
-def make_pw_hash(name, pw, salt = None):
+
+def make_pw_hash(name, pw, salt=None):
     if not salt:
         salt = make_salt()
     h = hashlib.sha256(name + pw + salt).hexdigest()
     return '%s,%s' % (salt, h)
 
+
 def valid_pw(name, password, h):
     salt = h.split(',')[0]
     return h == make_pw_hash(name, password, salt)
 
+
 def valid_username(username):
     return username and USER_RE.match(username)
 
+
 def valid_password(password):
     return password and PASS_RE.match(password)
+
 
 def valid_email(email):
     return not email or EMAIL_RE.match(email)
@@ -67,7 +75,7 @@ class User(db.Model):
         return user
 
     @classmethod
-    def create(cls, name, pw, email = None):
+    def create(cls, name, pw, email=None):
         """Class method to create a User object"""
         pw_hash = make_pw_hash(name, pw)
         return User(name=name, pw_hash=pw_hash, email=email)
@@ -86,6 +94,7 @@ class BlogPost(db.Model):
         """Class method to determine if a blog post exists"""
         post = BlogPost.get_by_id(int(post_id))
         return post
+
 
 class Comment(db.Model):
     """Comment db Model"""
@@ -134,6 +143,7 @@ class Handler(webapp2.RequestHandler):
         uid = self.read_secure_cookie('user_id')
         self.user = uid and User.get_by_id(int(uid))
 
+
 class RootPage(Handler):
     """Handler for main page"""
     def get(self):
@@ -153,7 +163,10 @@ class MyBlog(Handler):
         if not self.user:
             self.redirect('/')
 
-        posts = [post for post in BlogPost.all().filter('created_by =', self.user)]
+        posts = []
+        for post in BlogPost.all().filter('created_by =', self.user):
+            posts.append(post)
+
         self.render('myblog.html', posts=posts)
 
 
@@ -180,12 +193,12 @@ class EditPost(Handler):
 
         if self.user and self.user.key() == post.created_by.key():
             self.render('edit_post.html', post=post)
-        # If the current user is not the same as the posts' author, throw an error
+        # If the current user is not = the posts' author, throw an error
         elif self.user.key() != post.created_by.key():
             error = 'You can\'t edit posts you did not create!'
             self.render('permalink.html', post=post, error=error)
         else:
-            # We should never get here as there should be no user, handle this anyway
+            # We should never get here as there will be no user, handle anyway
             error = 'You are not logged in; you cannot edit posts!'
             self.render('permalink.html', post=post, error=error)
 
@@ -215,12 +228,12 @@ class DeletePost(Handler):
 
         if self.user and self.user.key() == post.created_by.key():
             self.render('delete_post.html', post=post)
-        # If the current user is not the same as the posts' author, throw an error
+        # If the current user is not = the posts' author, throw an error
         elif self.user.key() != post.created_by.key():
             error = 'You can\'t delete posts you did not create!'
             self.render('permalink.html', post=post, error=error)
         else:
-            # We should never get here as there should be no user, handle this anyway
+            # We should never get here as there will be no user, handle anyway
             error = 'You are not logged in; you cannot delete posts!'
             self.render('permalink.html', post=post, error=error)
 
@@ -269,14 +282,22 @@ class NewPost(Handler):
         content = self.request.get('content')
 
         if subject and content:
-            post = BlogPost(subject=subject, content=content, created_by=self.user, likes=[])
+            post = BlogPost(subject=subject,
+                            content=content,
+                            created_by=self.user,
+                            likes=[]
+                            )
             post.put()
             post_id = post.key().id()
 
             self.redirect('%s' % post_id)
         else:
             error = "Please enter both a subject and blog post"
-            self.render("newpost.html", subject=subject, content=content, error=error)
+            self.render("newpost.html",
+                        subject=subject,
+                        content=content,
+                        error=error
+                        )
 
 
 class NewComment(Handler):
@@ -289,7 +310,7 @@ class NewComment(Handler):
             self.error(404)
             return
 
-        self.render("post_comment.html", post_id = post_id)
+        self.render("post_comment.html", post_id=post_id)
 
     def post(self, post_id):
         if not self.user:
@@ -301,7 +322,7 @@ class NewComment(Handler):
         if content:
             comment = Comment(author=self.user, content=content, post_id=post)
             comment.put()
-            time.sleep(.5) # Give the db time to operate before redirecting
+            time.sleep(.5)  # Give the db time to operate before redirecting
 
             self.redirect('/blog/%s' % post_id)
         else:
@@ -321,14 +342,22 @@ class EditComment(Handler):
 
         if self.user and self.user.key() == comment.author.key():
             self.render('edit_comment.html', post=post, comment=comment)
-        # If the current user is not the same as the comments' author, throw an error
+        # If the current user is not = comments' author, throw an error
         elif self.user.key() != comment.author.key():
             error = 'You can\'t edit comments you did not create!'
-            self.render('permalink.html', post=post, comment=comment, error=error)
+            self.render('permalink.html',
+                        post=post,
+                        comment=comment,
+                        error=error
+                        )
         else:
-            # We should never get here as there should be no user, handle this anyway
+            # We should never get here as there will be no user, handle anyway
             error = 'You are not logged in; you cannot edit posts!'
-            self.render('permalink.html', post=post, comment=comment, error=error)
+            self.render('permalink.html',
+                        post=post,
+                        comment=comment,
+                        error=error
+                        )
 
     def post(self, post_id, comment_id):
         edit_error = 'Please enter your comments!'
@@ -357,19 +386,26 @@ class DeleteComment(Handler):
 
         if self.user and self.user.key() == comment.author.key():
             self.render('delete_comment.html', post=post, comment=comment)
-        # If the current user is not the same as the comments' author, throw an error
+        # If the current user is not = the comments' author, throw an error
         elif self.user.key() != comment.created_by.key():
             error = 'You can\'t delete comments you did not create!'
-            self.render('permalink.html', post=post, comment=comment, error=error)
+            self.render('permalink.html',
+                        post=post,
+                        comment=comment,
+                        error=error
+                        )
         else:
-            # We should never get here as there should be no user, handle this anyway
+            # We should never get here as there will be no user, handle anyway
             error = 'You are not logged in; you cannot delete comments!'
-            self.render('permalink.html', post=post, comment=comment, error=error)
+            self.render('permalink.html',
+                        post=post,
+                        comment=comment,
+                        error=error
+                        )
 
     def post(self, post_id, comment_id):
         alert = 'Comment successfully deleted'
         comment = Comment.get_by_id(int(comment_id))
-        post = BlogPost.get_by_id(int((post_id)))
 
         comment.delete()
 
@@ -391,7 +427,7 @@ class Signup(Handler):
         verify = self.request.get('verify')
         email = self.request.get('email')
 
-        params = dict(username = username, email = email)
+        params = dict(username=username, email=email)
 
         if not valid_username(username):
             params['user_error'] = 'That\'s not a valid username'
@@ -419,7 +455,6 @@ class Signup(Handler):
                 user = User.create(name=username, pw=password, email=email)
                 user.put()
                 self.set_secure_cookie('user_id', str(user.key().id()))
-                #self.response.headers.add_header('Set-Cookie', 'name=%s; Path=/' % str(username))
                 self.redirect('welcome')
 
 
@@ -452,6 +487,7 @@ class Logout(Handler):
                 'user_id=; Path=/')
         self.redirect('/')
 
+
 class Welcome(Handler):
     """Handler for user home/welcome page"""
     def get(self, alert=''):
@@ -462,19 +498,20 @@ class Welcome(Handler):
 
 
 # Main router
-app = webapp2.WSGIApplication([('/', RootPage),
-                               ('/blog', Blog),
-                               ('/blog/my', MyBlog),
-                               (r'/blog/(\d+)', Entry),
-                               (r'/blog/(\d+)/edit', EditPost),
-                               (r'/blog/(\d+)/delete', DeletePost),
-                               (r'/blog/(\d+)/like', LikePost),
-                               ('/blog/newpost', NewPost),
-                               (r'/blog/(\d+)/comment', NewComment),
-                               (r'/blog/(\d+)/comment/(\d+)/edit', EditComment),
-                               (r'/blog/(\d+)/comment/(\d+)/delete', DeleteComment),
-                               ('/blog/signup', Signup),
-                               ('/blog/login', Login),
-                               ('/blog/logout', Logout),
-                               ('/blog/welcome', Welcome)],
-                               debug=True)
+app = webapp2.WSGIApplication([
+    ('/', RootPage),
+    ('/blog', Blog),
+    ('/blog/my', MyBlog),
+    (r'/blog/(\d+)', Entry),
+    (r'/blog/(\d+)/edit', EditPost),
+    (r'/blog/(\d+)/delete', DeletePost),
+    (r'/blog/(\d+)/like', LikePost),
+    ('/blog/newpost', NewPost),
+    (r'/blog/(\d+)/comment', NewComment),
+    (r'/blog/(\d+)/comment/(\d+)/edit', EditComment),
+    (r'/blog/(\d+)/comment/(\d+)/delete', DeleteComment),
+    ('/blog/signup', Signup),
+    ('/blog/login', Login),
+    ('/blog/logout', Logout),
+    ('/blog/welcome', Welcome)],
+    debug=True)
