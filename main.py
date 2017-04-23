@@ -259,13 +259,10 @@ class DeletePost(Handler):
 
 class LikePost(Handler):
     """Handler for liking a single entry"""
+    @login_required
     def post(self, post_id):
-        if not self.user:
-            error = 'You must be logged in to Like posts!'
-            self.render('login', error=error)
-
         post = BlogPost.get_by_id(int(post_id))
-        type(self.user.key().id())
+
         if self.user.key() != post.created_by.key():
             if self.user.name not in post.likes:
                 post.likes.append(self.user.name)
@@ -282,15 +279,12 @@ class LikePost(Handler):
 
 class NewPost(Handler):
     """Handler for creating a single entry"""
+    @login_required
     def get(self, subject='', content='', error=''):
-        if not self.user:
-            self.redirect('/')
-
         self.render("newpost.html")
 
+    @login_required
     def post(self):
-        if not self.user:
-            self.redirect('/')
         subject = self.request.get('subject')
         content = self.request.get('content')
 
