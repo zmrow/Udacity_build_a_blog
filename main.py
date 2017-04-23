@@ -309,19 +309,19 @@ class NewPost(Handler):
 
 class NewComment(Handler):
     """Handler for creating a single comment"""
+    @login_required
     def get(self, post_id, error=''):
-        if not self.user:
-            self.redirect('%s' % post_id)
-
         if not BlogPost.exists(post_id):
             self.error(404)
             return
 
         self.render("post_comment.html", post_id=post_id)
 
+    @login_required
     def post(self, post_id):
-        if not self.user:
-            self.redirect('/')
+        if not BlogPost.exists(post_id):
+            self.error(404)
+            return
 
         post = BlogPost.get_by_id(int(post_id))
         content = self.request.get('content')
@@ -331,7 +331,7 @@ class NewComment(Handler):
             comment.put()
             time.sleep(.5)  # Give the db time to operate before redirecting
 
-            self.redirect('/blog/%s' % post_id)
+            return self.redirect('/blog/%s' % post_id)
         else:
             error = "Please enter your comments!"
             self.render("post_comment.html", content=content, error=error)
