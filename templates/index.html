@@ -4,35 +4,33 @@
 
 <h1>Blog!</h1>
 <hr>
-{% if posts %}
-  {% for post in posts %}
-    <section class="post">
-      <div class="row col-md-12 post-subject">
-        <h2 class="text-left">
-            <a href="/blog/{{ post.key().id() }}">{{ post.subject }}</a>
-            {% if post.likes|length == 1 %}
-              <small>{{ post.likes|length }} like</small>
-            {% else %}
-              <small>{{ post.likes|length }} likes</small>
-            {% endif%}
-        </h2>
-        <h4 class="text-left"><small>{{ post.created }} by {{ post.created_by.name }}</small></h4>
-      </div>
+{% for post in posts %}
+  <section class="post">
+    <div class="row col-md-12 post-subject">
+      <h2 class="text-left">
+          <a href="/blog/{{ post.key().id() }}">{{ post.subject }}</a>
+          {% if post.likes|length == 1 %}
+            <small>{{ post.likes|length }} like</small>
+          {% else %}
+            <small>{{ post.likes|length }} likes</small>
+          {% endif%}
+      </h2>
+      <h4 class="text-left"><small>{{ post.created }} by {{ post.created_by.name }}</small></h4>
+    </div>
   
-      <div class="row col-md-12 post-body">
-        {{ post.content }}
-      </div>
+    <div class="row col-md-12 post-body">
+      {{ post.content }}
+    </div>
   
-      <div class="row col-md-12 post-edit-links">
-        {% if user and user.key().id() == post.created_by.key().id() %}
-          <a href="/blog/{{ post.key().id() }}/edit">Edit</a>
-          <a href="/blog/{{ post.key().id() }}/delete">Delete</a>
-        {% elif user %}
-          <a href="/blog/{{ post.key().id() }}/comment">Comment</a>
-        {% endif %}
-      </div>
-    </section>
-  {% endfor %}
-{% endif %}
+    <div class="row col-md-12 post-edit-links">
+      {% if user and user.key().id() == post.created_by.key().id() %}
+        <a href="/blog/{{ post.key().id() }}/edit">Edit</a>
+        <a href="/blog/{{ post.key().id() }}/delete">Delete</a>
+      {% elif user %}
+        <a href="/blog/{{ post.key().id() }}/comment">Comment</a>
+      {% endif %}
+    </div>
+  </section>
+{% endfor %}
 
 {% endblock %}

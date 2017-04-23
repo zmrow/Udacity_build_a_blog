@@ -3,14 +3,20 @@
 {% block content %}
 
 <h2>New Post</h2>
+<div class="error">{{ error }}</div>
 <form id="new-post" method="post">
-    <div class="subject">Subject</div>
-    <input type="text" name="subject" value="{{ subject }}">
-    <div class="content">Post Content</div>
-    <textarea id="new-post" name="content" cols="30" rows="10">{{ text }}</textarea>
-    <div class="error">{{ error }}</div>
-    <input type="submit">
+  <div class="form-group">
+    <label for="subject">Subject</label>
+    <input type="text" class="form-control" name="subject" value="{{ subject }}">
+  </div>
+  <div class="form-group">
+    <label for="content">Post Content</label>
+    <textarea class="form-control" id="new-post" name="content" rows="10">{{ content }}</textarea>
+  </div>
+  <button type="submit" class="btn btn-default">Submit</button>
+  <button type="button" class="btn btn-link">
     <a href="/blog">Cancel</a>
+  </button>
 </form>
 
 {% endblock %}

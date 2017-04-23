@@ -9,6 +9,8 @@ This project is a simple multi-user blog engine created for the Udacity Full Sta
 
 This project makes use of the awesome [Bootstrap framework](http://getbootstrap.com/).
 
+A current running version [is available here](https://blog-udacity-163416.appspot.com/blog/newpost).
+
 ## Quick start
 
 Simple:
