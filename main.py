@@ -10,21 +10,9 @@ import webapp2
 
 from google.appengine.ext import db
 
-# Jinja env setup taken from Googles sample app here:
-# https://github.com/GoogleCloudPlatform/appengine-guestbook-python/blob/master/guestbook.py
-TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
-JINJA_ENV = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(TEMPLATE_DIR),
-    extensions=['jinja2.ext.autoescape'],
-    autoescape=True)
-
-SECRET = '$w0rdf1sh'
-USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
-PASS_RE = re.compile(r"^.{3,20}$")
-EMAIL_RE = re.compile(r'^[\S]+@[\S]+\.[\S]+$')
-
 
 def make_secure_val(val):
+    SECRET = '$w0rdf1sh'
     return "%s|%s" % (val, hmac.new(SECRET, val).hexdigest())
 
 
@@ -51,14 +39,17 @@ def valid_pw(name, password, h):
 
 
 def valid_username(username):
+    USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
     return username and USER_RE.match(username)
 
 
 def valid_password(password):
+    PASS_RE = re.compile(r"^.{3,20}$")
     return password and PASS_RE.match(password)
 
 
 def valid_email(email):
+    EMAIL_RE = re.compile(r'^[\S]+@[\S]+\.[\S]+$')
     return not email or EMAIL_RE.match(email)
 
 
@@ -116,8 +107,17 @@ class Handler(webapp2.RequestHandler):
         self.response.out.write(*a, **kw)
 
     def render_str(self, template, **params):
+        # Jinja env setup taken from Googles sample app here:
+        # https://github.com/GoogleCloudPlatform/appengine-guestbook-python/
+        # blob/master/guestbook.py
+        template_dir = os.path.join(os.path.dirname(__file__), "templates")
+        jinja_env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_dir),
+            extensions=['jinja2.ext.autoescape'],
+            autoescape=True)
+
         params['user'] = self.user
-        t = JINJA_ENV.get_template(template)
+        t = jinja_env.get_template(template)
         return t.render(params)
 
     def render(self, template, **kw):
