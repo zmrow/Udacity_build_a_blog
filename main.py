@@ -160,10 +160,8 @@ class Blog(Handler):
 
 class MyBlog(Handler):
     """Handler for page container only currently logged in users posts"""
+    @login_required
     def get(self):
-        if not self.user:
-            self.redirect('/')
-
         posts = []
         for post in BlogPost.all().filter('created_by =', self.user):
             posts.append(post)
@@ -185,6 +183,7 @@ class Entry(Handler):
 
 class EditPost(Handler):
     """Handler for editing a single entry"""
+    @login_required
     def get(self, post_id):
         if not BlogPost.exists(post_id):
             self.error(404)
@@ -203,23 +202,30 @@ class EditPost(Handler):
             error = 'You are not logged in; you cannot edit posts!'
             self.render('permalink.html', post=post, error=error)
 
+    @login_required
     def post(self, post_id):
         edit_error = 'Please enter both a subject and content'
+        user_error = 'You can\'t edit posts you did not create!'
         subject = self.request.get('subject')
         content = self.request.get('content')
+        post = BlogPost.get_by_id(int(post_id))
 
-        if subject and content:
-            post = BlogPost.get_by_id(int(post_id))
-            post.subject = subject
-            post.content = content
-            post.put()
-            self.redirect('/blog/%s' % str(post.key().id()))
+        if self.user.key() == post.created_by.key():
+            if subject and content:
+                post = BlogPost.get_by_id(int(post_id))
+                post.subject = subject
+                post.content = content
+                post.put()
+                return self.redirect('/blog/%s' % str(post.key().id()))
+            else:
+                self.render('edit_post.html', post=post, error=edit_error)
         else:
-            self.render('edit_post.html', error=edit_error)
+            self.render('edit_post.html', post=post, error=user_error)
 
 
 class DeletePost(Handler):
     """Handler for deleting a single entry"""
+    @login_required
     def get(self, post_id):
         if not BlogPost.exists(post_id):
             self.error(404)
@@ -227,7 +233,7 @@ class DeletePost(Handler):
 
         post = BlogPost.get_by_id(int((post_id)))
 
-        if self.user and self.user.key() == post.created_by.key():
+        if self.user.key() == post.created_by.key():
             self.render('delete_post.html', post=post)
         # If the current user is not = the posts' author, throw an error
         elif self.user.key() != post.created_by.key():
@@ -238,11 +244,17 @@ class DeletePost(Handler):
             error = 'You are not logged in; you cannot delete posts!'
             self.render('permalink.html', post=post, error=error)
 
+    @login_required
     def post(self, post_id):
         alert = 'Blog post successfully deleted'
+        error = 'You can\'t delete posts you did not create!'
         post = BlogPost.get_by_id(int(post_id))
-        post.delete()
-        self.render('welcome.html', alert=alert)
+
+        if self.user.key() == post.created_by.key():
+            post.delete()
+            self.render('welcome.html', alert=alert)
+        else:
+            self.render('permalink.html', post=post, error=error)
 
 
 class LikePost(Handler):
