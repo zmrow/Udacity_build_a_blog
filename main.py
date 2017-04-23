@@ -204,6 +204,10 @@ class EditPost(Handler):
 
     @login_required
     def post(self, post_id):
+        if not BlogPost.exists(post_id):
+            self.error(404)
+            return
+
         edit_error = 'Please enter both a subject and content'
         user_error = 'You can\'t edit posts you did not create!'
         subject = self.request.get('subject')
@@ -246,6 +250,10 @@ class DeletePost(Handler):
 
     @login_required
     def post(self, post_id):
+        if not BlogPost.exists(post_id):
+            self.error(404)
+            return
+
         alert = 'Blog post successfully deleted'
         error = 'You can\'t delete posts you did not create!'
         post = BlogPost.get_by_id(int(post_id))
@@ -261,6 +269,10 @@ class LikePost(Handler):
     """Handler for liking a single entry"""
     @login_required
     def post(self, post_id):
+        if not BlogPost.exists(post_id):
+            self.error(404)
+            return
+
         post = BlogPost.get_by_id(int(post_id))
 
         if self.user.key() != post.created_by.key():
